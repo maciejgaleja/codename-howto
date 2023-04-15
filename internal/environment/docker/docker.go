@@ -32,6 +32,7 @@ func (i Image) Build(dockerfile string) (err error) {
 
 func (i Image) Run() (c Container, err error) {
 	cidfile := "./codename-howto-cid"
+	defer os.Remove(cidfile)
 	os.Remove(cidfile)
 	cmd := exec.Command("docker", "run", "-d", "--cidfile", cidfile, "--rm", i.Tag, "/bin/sleep", "10")
 	out, err := cmd.CombinedOutput()

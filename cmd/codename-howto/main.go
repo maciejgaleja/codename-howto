@@ -6,6 +6,7 @@ import (
 
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/parser"
+	"github.com/maciejgaleja/codename-howto/internal/environment/docker"
 
 	"fmt"
 )
@@ -92,4 +93,19 @@ func main() {
 	for _, s := range md.Steps {
 		fmt.Println(s)
 	}
+
+	dockerfile := string(md.Environment)
+	i := docker.Image{Tag: "codename-howto"}
+	err = i.Build(dockerfile)
+	if err != nil {
+		panic(err)
+	}
+
+	container, err := i.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer container.Stop()
+
+	fmt.Println(container)
 }

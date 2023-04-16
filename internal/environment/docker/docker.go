@@ -72,7 +72,7 @@ func (c Container) Exec(interpreter string, input []byte) (o []byte, err error) 
 	}()
 	o, err = cmd.CombinedOutput()
 	if err != nil {
-		err = fmt.Errorf("error during image build: %s: %v", o, err)
+		err = fmt.Errorf("error during exec: %s: %v", o, err)
 		return
 	}
 

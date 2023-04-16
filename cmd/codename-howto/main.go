@@ -4,7 +4,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
+	"github.com/gomarkdown/markdown/md"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/maciejgaleja/codename-howto/internal/environment/docker"
 
@@ -23,11 +25,13 @@ type Step struct {
 	Action      int
 	Interpreter Interpreter
 	Code        []byte
+	OutputNode  *ast.CodeBlock
 }
 
 type HowTo struct {
 	Environment []byte
 	Steps       []Step
+	Doc         ast.Node
 }
 
 func getHeaderText(h *ast.Heading) string {
@@ -47,12 +51,12 @@ func ParseMd(mdf Filename) (h HowTo, err error) {
 	}
 	extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
 	p := parser.NewWithExtensions(extensions)
-	doc := p.Parse(md)
+	h.Doc = p.Parse(md)
 
 	var hed string
 
-	if _, ok := doc.(*ast.Document); ok {
-		for _, c := range doc.GetChildren() {
+	if _, ok := h.Doc.(*ast.Document); ok {
+		for _, c := range h.Doc.GetChildren() {
 			switch c.(type) {
 			case *ast.Heading:
 				hed = getHeaderText(c.(*ast.Heading))
@@ -68,9 +72,18 @@ func ParseMd(mdf Filename) (h HowTo, err error) {
 					}
 				} else {
 					if strings.HasPrefix(hed, "Create file:") {
-						h.Steps = append(h.Steps, Step{Action: CreateFile, Interpreter: "", Code: code})
+						h.Steps = append(h.Steps, Step{Action: CreateFile, Interpreter: "", Code: code, OutputNode: nil})
 					} else {
-						h.Steps = append(h.Steps, Step{Action: ExecuteCode, Interpreter: interpreter, Code: code})
+						output, _ := c.(*ast.CodeBlock)
+						if strings.TrimSpace(string(output.Literal)) == "<output placeholder>" {
+							if len(h.Steps) == 0 {
+								err = fmt.Errorf("otput placeholder found without previous code")
+								return
+							}
+							h.Steps[len(h.Steps)-1].OutputNode = output
+						} else {
+							h.Steps = append(h.Steps, Step{Action: ExecuteCode, Interpreter: interpreter, Code: code, OutputNode: nil})
+						}
 					}
 				}
 			}
@@ -80,6 +93,12 @@ func ParseMd(mdf Filename) (h HowTo, err error) {
 		return
 	}
 
+	return
+}
+
+func (h HowTo) AsMarkdown() (ret []byte) {
+	renderer := md.NewRenderer()
+	ret = markdown.Render(h.Doc, renderer)
 	return
 }
 
@@ -111,5 +130,10 @@ func main() {
 			panic(err)
 		}
 		fmt.Println("!!! ", string(o))
+		if step.OutputNode != nil {
+			step.OutputNode.Literal = o
+		}
 	}
+
+	fmt.Println(string(md.AsMarkdown()))
 }

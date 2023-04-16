@@ -3,14 +3,13 @@
 ## Envorinment
 
 ```dockerfile
-FROM ubuntu:latest
-
+FROM ubuntu:22.04
 ```
 
 How to print things to the console
 
 ```bash
-printf 3
+printf '%.5f' 54
 ```
 
 This will print:

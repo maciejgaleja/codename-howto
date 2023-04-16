@@ -10,7 +10,11 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/codename-howto/main.go",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--output-dir=output",
+                "examples/how-to-print.md"
+            ]
         }
     ]
 }

@@ -59,3 +59,22 @@ func (c Container) Stop() (err error) {
 	}
 	return
 }
+
+func (c Container) Exec(interpreter string, input []byte) (o []byte, err error) {
+	cmd := exec.Command("docker", "exec", "-i", c.ID, "/usr/bin/env", interpreter)
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return
+	}
+	go func() {
+		defer stdin.Close()
+		stdin.Write(input)
+	}()
+	o, err = cmd.CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("error during image build: %s: %v", o, err)
+		return
+	}
+
+	return
+}

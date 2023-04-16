@@ -88,11 +88,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(md.Environment))
-
-	for _, s := range md.Steps {
-		fmt.Println(s)
-	}
 
 	dockerfile := string(md.Environment)
 	i := docker.Image{Tag: "codename-howto"}
@@ -108,4 +103,13 @@ func main() {
 	defer container.Stop()
 
 	fmt.Println(container)
+
+	for _, step := range md.Steps {
+		fmt.Println(step)
+		o, err := container.Exec(string(step.Interpreter), step.Code)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("!!! ", string(o))
+	}
 }
